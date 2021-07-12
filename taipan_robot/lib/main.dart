@@ -7,7 +7,7 @@ import 'package:taipan_robot/widgets/taskDialog.dart';
 
 import 'data/mission.dart';
 
-void main() {
+void main() async {
   initializeReflectable();
   runApp(MyApp());
 }
