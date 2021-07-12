@@ -1,6 +1,7 @@
-import 'package:dart_json_mapper/dart_json_mapper.dart';
 import 'package:flutter/material.dart';
+import 'package:taipan_robot/data/missionManager.dart';
 import 'package:taipan_robot/main.reflectable.dart';
+import 'package:taipan_robot/mainPage.dart';
 import 'package:taipan_robot/theme/theme.dart';
 import 'package:taipan_robot/widgets/taskDialog.dart';
 
@@ -33,7 +34,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  Mission myMission = Mission('New Mission');
+  MissionManager mm = MissionManager();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -42,36 +43,16 @@ class _MyHomePageState extends State<MyHomePage> {
         // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            TextButton(
-              onPressed: saveConfig,
-              child: Text('Save Config'),
-            )
-          ],
-        ),
-      ),
+      body: Dashboard(),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           Task newTask = Task('new', 0, 0);
           displayTaskInputDialog(context, newTask);
-          myMission.tasks.add(newTask);
+          mm.mission.tasks.add(newTask);
         },
         tooltip: 'Increment',
         child: Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
-  }
-
-  void saveConfig() {
-    print('Saving Config');
-    print(JsonMapper.serialize(myMission));
   }
 }

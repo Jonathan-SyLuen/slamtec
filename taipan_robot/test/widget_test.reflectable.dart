@@ -99,7 +99,7 @@ final _data = <r.Reflectable, r.ReflectorData>{
             3,
             4,
             const <int>[1],
-            const <Object>[const prefix0.JsonProperty(ignore: true)]),
+            const <Object>[const prefix0.JsonProperty(name: 'tasks')]),
         r.VariableMirrorImpl(
             r'name',
             32773,

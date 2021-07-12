@@ -5,7 +5,7 @@ class Mission {
   @JsonProperty(name: 'name')
   String name;
 
-  @JsonProperty(ignore: true)
+  @JsonProperty(name: 'tasks')
   List<Task> tasks = [];
 
   Mission(this.name);
