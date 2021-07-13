@@ -4,50 +4,51 @@ import 'mission.dart';
 
 class MissionManager {
   static final MissionManager _missionManager = MissionManager._internal();
-
+  late SharedPreferences prefs;
   factory MissionManager() {
     return _missionManager;
   }
   MissionManager._internal() {
-    initPref().then((sp) {
+    SharedPreferences.getInstance().then((sp) {
       prefs = sp;
       getMissions();
-      getlastMission();
     });
   }
-  late SharedPreferences prefs;
-  Mission mission = new Mission('New');
-  List<String> missions = [];
 
-  Future<SharedPreferences> initPref() async {
-    return SharedPreferences.getInstance();
+  List<Mission> missions = [];
+  int _activeMission = 0;
+
+  int get activeMission {
+    return _activeMission;
+  }
+
+  set activeMission(int index) {
+    if (index < missions.length) {
+      _activeMission = index;
+      prefs.setInt('activeMission', index);
+    }
   }
 
   void saveMission() {
-    String serialized = JsonMapper.serialize(mission);
-    print(serialized);
-    prefs.setString('@mission_' + mission.name, serialized);
-    prefs.setString('currMission', mission.name);
-    missions.add(mission.name);
+    String serialized = JsonMapper.serialize(missions[activeMission]);
+    prefs.setString('mission_$activeMission', serialized);
   }
 
-  List<String> getMissions() {
-    missions.clear();
-    List<String> tmp = prefs
-        .getKeys()
-        .where((element) => element.startsWith('@mission_'))
-        .toList();
-    print(prefs.getKeys());
-    tmp.forEach((element) {
-      missions.add(element.substring(9));
-    });
-    return missions;
-  }
-
-  void getlastMission() {
-    String currentMission = prefs.getString('currMission') ?? '';
-    if (currentMission.isNotEmpty) {
-      print(currentMission);
+  void getMissions() {
+    for (int i = 0; i < 4; i++) {
+      print('Mission $i');
+      String str = prefs.getString('mission_$i') ?? '';
+      if (str.isEmpty) {
+        Mission x = new Mission('Empty mission');
+        str = JsonMapper.serialize(x);
+        missions.add(x);
+      } else {
+        Mission x =
+            JsonMapper.deserialize<Mission>(str) ?? new Mission('failed');
+        missions.add(x);
+      }
+      //missions.add(JsonMapper.deserialize<Mission>(str)!);
     }
+    _activeMission = prefs.getInt('activeMission') ?? 0;
   }
 }

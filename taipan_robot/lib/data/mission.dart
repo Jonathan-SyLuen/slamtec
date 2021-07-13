@@ -1,12 +1,16 @@
 import 'package:dart_json_mapper/dart_json_mapper.dart';
 
 @jsonSerializable
+@Json(valueDecorators: Mission.valueDecorators)
 class Mission {
   @JsonProperty(name: 'name')
   String name;
 
   @JsonProperty(name: 'tasks')
   List<Task> tasks = [];
+
+  static Map<Type, ValueDecoratorFunction> valueDecorators() =>
+      {typeOf<List<Task>>(): (value) => value.cast<Task>()};
 
   Mission(this.name);
   void run() {}

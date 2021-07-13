@@ -37,7 +37,11 @@ final _data = <r.Reflectable, r.ReflectorData>{
             -1,
             0,
             const <int>[],
-            const <Object>[prefix0.jsonSerializable],
+            const <Object>[
+              prefix0.jsonSerializable,
+              const prefix0.Json(
+                  valueDecorators: prefix1.Mission.valueDecorators)
+            ],
             null),
         r.NonGenericClassMirrorImpl(
             r'Task',

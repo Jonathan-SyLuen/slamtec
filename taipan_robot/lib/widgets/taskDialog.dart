@@ -8,14 +8,17 @@ Future<void> displayTaskInputDialog(BuildContext context, Task task) async {
       builder: (context) {
         return StatefulBuilder(builder: (context, setState) {
           return AlertDialog(
-            title: Text('Add new Task'),
+            title: task.name == 'new'
+                ? Text('Add new Task')
+                : Text('Modify ${task.name}'),
             content: SingleChildScrollView(
               child: Container(
                 height: MediaQuery.of(context).size.height * 0.5,
                 width: MediaQuery.of(context).size.width * 0.4,
                 child: Column(
                   children: [
-                    TextField(
+                    TextFormField(
+                      initialValue: task.name == 'new' ? '' : '${task.name}',
                       onChanged: (value) {
                         task.name = value;
                       },
@@ -81,7 +84,7 @@ Future<void> displayTaskInputDialog(BuildContext context, Task task) async {
                 onPressed: () {
                   Navigator.pop(context);
                 },
-                child: Text('Add Task'),
+                child: Text(task.name == 'new' ? 'Add Task' : 'Modify'),
               ),
             ],
           );
