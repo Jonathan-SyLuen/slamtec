@@ -1,10 +1,16 @@
+import 'dart:async';
+
 import 'package:dart_json_mapper/dart_json_mapper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:taipan_robot/Robot/robotCom.dart';
+import 'package:taipan_robot/Robot/sterilizer.dart';
 import 'mission.dart';
 
 class MissionManager {
   static final MissionManager _missionManager = MissionManager._internal();
+  Sterilizer robotSterilizer = Sterilizer();
   late SharedPreferences prefs;
+  late ComHandler robotCom;
   factory MissionManager() {
     return _missionManager;
   }
@@ -13,11 +19,11 @@ class MissionManager {
       prefs = sp;
       getMissions();
     });
+    robotCom = ComHandler();
+    robotCom.connect();
+    robotCom.setRobotMap();
+    taskStream.add(-1);
   }
-
-  List<Mission> missions = [];
-  int _activeMission = 0;
-
   int get activeMission {
     return _activeMission;
   }
@@ -29,8 +35,19 @@ class MissionManager {
     }
   }
 
+  List<Mission> missions = [];
+  int _activeMission = 0;
+  Stopwatch missionTimer = new Stopwatch();
+  bool taskRunning = false;
+  StreamController<int> taskStream = new StreamController.broadcast();
+
+  dispose() {
+    taskStream.close();
+  }
+
   void saveMission() {
     String serialized = JsonMapper.serialize(missions[activeMission]);
+    print(serialized);
     prefs.setString('mission_$activeMission', serialized);
   }
 
@@ -47,8 +64,37 @@ class MissionManager {
             JsonMapper.deserialize<Mission>(str) ?? new Mission('failed');
         missions.add(x);
       }
-      //missions.add(JsonMapper.deserialize<Mission>(str)!);
     }
     _activeMission = prefs.getInt('activeMission') ?? 0;
+  }
+
+  void executeMission() async {
+    Mission x = missions[activeMission];
+    missionTimer.start();
+    Timer(x.missionDuration, () {
+      taskRunning = false;
+      robotCom.stop();
+    });
+    taskRunning = true;
+
+    while (taskRunning) {
+      for (Task task in x.tasks) {
+        taskStream.add(x.tasks.indexOf(task));
+        print(missionTimer.elapsed);
+        robotSterilizer.setLight(task.lightOn);
+        robotSterilizer.setMist(task.mistOn);
+        await robotCom.moveTo(task.positionX, task.positionY, task.speed);
+        if (taskRunning == false) {
+          break;
+        }
+      }
+    }
+    taskStream.add(-1);
+    missionTimer.stop();
+    missionTimer.reset();
+    print('Finish execute Mission');
+    robotSterilizer.setLight(false);
+    robotSterilizer.setMist(false);
+    await robotCom.backHome();
   }
 }

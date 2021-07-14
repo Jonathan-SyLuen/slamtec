@@ -27,6 +27,21 @@ Future<void> displayFileNameDialog(BuildContext context) async {
                       keyboardType: TextInputType.name,
                       textInputAction: TextInputAction.next,
                     ),
+                    TextFormField(
+                      initialValue: mm
+                          .missions[mm.activeMission].missionDuration.inMinutes
+                          .toString(),
+                      onChanged: (value) {
+                        mm.missions[mm.activeMission].missionDuration =
+                            Duration(minutes: int.parse(value));
+                      },
+                      //controller: _textfieldController,
+                      decoration: InputDecoration(
+                          labelText: 'Mission Duration (minutes)',
+                          hintText: 'Must provide a positive number'),
+                      keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.next,
+                    ),
                   ],
                 ),
               ),

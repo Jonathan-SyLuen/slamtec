@@ -9,6 +9,9 @@ class Mission {
   @JsonProperty(name: 'tasks')
   List<Task> tasks = [];
 
+  @JsonProperty(name: 'Duration')
+  Duration missionDuration = new Duration(minutes: 30);
+
   static Map<Type, ValueDecoratorFunction> valueDecorators() =>
       {typeOf<List<Task>>(): (value) => value.cast<Task>()};
 
