@@ -14,10 +14,13 @@ class MissionManager {
   factory MissionManager() {
     return _missionManager;
   }
+  Completer<bool> initCompleted = new Completer();
+
   MissionManager._internal() {
     SharedPreferences.getInstance().then((sp) {
       prefs = sp;
       getMissions();
+      initCompleted.complete(true);
     });
     robotCom = ComHandler();
     robotCom.connect();

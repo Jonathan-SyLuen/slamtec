@@ -50,7 +50,7 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           Task newTask = Task('new', 0, 0);
-          displayTaskInputDialog(context, newTask);
+          await displayTaskInputDialog(context, newTask);
           setState(() {
             mm.missions[mm.activeMission].tasks.add(newTask);
           });

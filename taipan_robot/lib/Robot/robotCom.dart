@@ -91,6 +91,7 @@ class ComHandler {
                     '{"args":[{"kind":0,"map":{"dimension_x":${d.dimensionX},"dimension_y":${d.dimensionY},"map_data":"${d.mapData}","real_x":${d.realX},"real_y":${d.realY},"resolution":${d.resolution},"size":${d.size},"timestamp":${d.timestamp},"type":${d.type}},"partially":false,"type":0},{"pitch":0.0,"roll":0.0,"x":0.0,"y":0.0,"yaw":0.0,"z":0.0}],"command":"setmapandpose"}\n\r\n\r\n');
               });
               mapUpdate = d.size > 0;
+              print('Map Updated');
               break;
             case 'getwalls':
               VirtualWall vw = JsonMapper.deserialize<VirtualWall>(element)!;
@@ -136,6 +137,7 @@ class ComHandler {
       String mapSyntax = prefs.getString('robotMap') ?? '';
       if (mapSyntax.length > 0) {
         robotSock.add(utf8.encode(mapSyntax));
+        print('Setting map $mapSyntax');
       }
     }
     if (prefs.containsKey('robotWall')) {
@@ -143,6 +145,7 @@ class ComHandler {
 
       if (wallSyntax.length > 0) {
         robotSock.add(utf8.encode(wallSyntax));
+        print('Setting wall $wallSyntax');
       }
     }
   }
@@ -163,18 +166,36 @@ class ComHandler {
     });
   }
 
-  Future<bool> getMap() async {
+  Future<String> getMap() async {
+    Completer<String> mapCompleter = new Completer();
     knownArea.check = false;
+    mapUpdate = false;
+    wallUpdate = false;
     await Future.doWhile(() async {
       robotSock.add(utf8.encode(
           '{"args":{"kind":0, "partially":false, "type":0},"command":"getknownarea"}\n\r\n\r\n'));
       await Future.delayed(Duration(seconds: 3));
       return !knownArea.check;
     });
-    robotSock.add(utf8.encode(
-        '{"args":{"area":{"height":${knownArea.height},"width":${knownArea.width},"x":${knownArea.minX},"y":${knownArea.minY}},"kind":0,"partially":false,"type":0},"command":"getmapdata"}\n\r\n\r\n'));
-    robotSock.add(utf8.encode('{"args":0,"command":"getwalls"}\n\r\n\r\n'));
-    return true;
+    print('getknown area');
+
+    await Future.doWhile(() async {
+      robotSock.add(utf8.encode(
+          '{"args":{"area":{"height":${knownArea.height},"width":${knownArea.width},"x":${knownArea.minX},"y":${knownArea.minY}},"kind":0,"partially":false,"type":0},"command":"getmapdata"}\n\r\n\r\n'));
+      await Future.delayed(Duration(seconds: 1));
+      print('Waiting Map');
+      return !mapUpdate;
+    });
+    await Future.doWhile(() async {
+      robotSock.add(utf8.encode('{"args":0,"command":"getwalls"}\n\r\n\r\n'));
+      await Future.delayed(Duration(seconds: 1));
+      print('Waiting Wall');
+      return !wallUpdate;
+    });
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String mapString = prefs.getString('robotMap') ?? 'unknown error';
+    mapCompleter.complete(mapString);
+    return mapCompleter.future;
   }
 
   Future backHome() async {
