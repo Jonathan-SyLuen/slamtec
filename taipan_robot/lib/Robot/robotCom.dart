@@ -23,7 +23,7 @@ class ComHandler {
   bool wallUpdate = false;
   int actionID = 0;
   bool isActionDone = false;
-  String actionResult = 'Completed';
+  String actionResult = 'completed';
   KnownArea knownArea = new KnownArea(0, 0, 0, 0);
   int batteryPercentage = 0;
   int localizationQuality = -1;
@@ -262,6 +262,7 @@ class ComHandler {
         '{"args": {"param":"base.max_moving_speed", "value":"$speed"}, "command": "setsystemparameter"}\n\r\n\r\n'));
     robotSock.add(utf8.encode(
         '{"args": {"param":"base.max_angular_speed", "value":"${speed * 0.7}"}, "command": "setsystemparameter"}\n\r\n\r\n'));
+    await Future.delayed(Duration(seconds: 1));
     robotSock.add(utf8.encode(
         '{"args": {"options": {"flags": ["key_points", "key_points_with_oa"]}, "points": [[$x,$y]], "yaw": 0}, "command": "moveto"}\n\r\n\r\n'));
     isActionDone = false;

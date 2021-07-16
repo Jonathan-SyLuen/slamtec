@@ -170,11 +170,11 @@ class _DashboardState extends State<Dashboard> {
                                   StatusCard(Icons.high_quality,
                                       'Map Quality:\n${robotCom.localizationQuality}'),
                                   StatusCard(
-                                      robotCom.actionResult == 'Complete'
+                                      robotCom.actionResult == 'complete'
                                           ? Icons.done
-                                          : robotCom.actionResult == 'Running'
+                                          : robotCom.actionResult == 'running'
                                               ? Icons.run_circle
-                                              : Icons.running_with_errors,
+                                              : Icons.error,
                                       'Task Status:\n${robotCom.actionResult}'),
                                   GestureDetector(
                                     onTap: () {

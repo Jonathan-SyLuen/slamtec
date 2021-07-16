@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../data/mission.dart';
 
 Future<void> displayTaskInputDialog(BuildContext context, Task task) async {
-  List<bool> _isSelected = [false, false];
+  List<bool> _isSelected = [task.lightOn, task.mistOn];
   return showDialog(
       context: context,
       builder: (context) {

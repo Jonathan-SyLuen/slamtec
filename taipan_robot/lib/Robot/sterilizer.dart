@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 class Sterilizer {
@@ -10,6 +11,7 @@ class Sterilizer {
   Sterilizer() {
     Socket.connect('192.168.11.32', 5555).then((s) {
       sock = s;
+      sync();
     });
   }
 
@@ -27,5 +29,12 @@ class Sterilizer {
     isMistOn = on;
     _mistParam = on ? 3 : 4;
     sock.add([0x73, 0x68, _mistParam, 0x23, 0x62]);
+  }
+
+  void sync() {
+    Timer.periodic(Duration(seconds: 5), (timer) {
+      sock.add([0x73, 0x68, _uvParam, 0x23, 0x62]);
+      sock.add([0x73, 0x68, _mistParam, 0x23, 0x62]);
+    });
   }
 }
