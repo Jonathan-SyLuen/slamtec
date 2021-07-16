@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dart_json_mapper/dart_json_mapper.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:taipan_robot/Robot/robotCom.dart';
 import 'package:taipan_robot/Robot/sterilizer.dart';
@@ -72,6 +73,7 @@ class MissionManager {
   }
 
   void executeMission() async {
+    FlutterTts flutterTts = FlutterTts();
     Mission x = missions[activeMission];
     missionTimer.start();
     Timer(x.missionDuration, () {
@@ -79,15 +81,22 @@ class MissionManager {
       robotCom.stop();
     });
     taskRunning = true;
+    await flutterTts.speak(
+        'Sterilization Process start soon. Please keep the path clean. Thank you. I will clean ${x.name} routine.');
 
     while (taskRunning) {
       for (Task task in x.tasks) {
+        flutterTts.speak('I am moving to ${task.name}');
         taskStream.add(x.tasks.indexOf(task));
-        print(missionTimer.elapsed);
         robotSterilizer.setLight(task.lightOn);
         robotSterilizer.setMist(task.mistOn);
         await robotCom.moveTo(task.positionX, task.positionY, task.speed);
         if (taskRunning == false) {
+          break;
+        }
+        if (robotCom.batteryPercentage < 20) {
+          flutterTts.speak('Battery is low, I need a rest.');
+          taskRunning = false;
           break;
         }
       }
@@ -96,6 +105,7 @@ class MissionManager {
     missionTimer.stop();
     missionTimer.reset();
     print('Finish execute Mission');
+    flutterTts.speak('The mission is canceled or completed. I am moving home');
     robotSterilizer.setLight(false);
     robotSterilizer.setMist(false);
     await robotCom.backHome();

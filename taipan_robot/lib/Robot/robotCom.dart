@@ -27,6 +27,7 @@ class ComHandler {
   KnownArea knownArea = new KnownArea(0, 0, 0, 0);
   int batteryPercentage = 0;
   int localizationQuality = -1;
+  int mapFileSize = 0;
 
   void dispose() {
     robotSock.close();
@@ -97,7 +98,7 @@ class ComHandler {
               VirtualWall vw = JsonMapper.deserialize<VirtualWall>(element)!;
               SharedPreferences.getInstance().then((SharedPreferences prefs) {
                 prefs.setString('robotWall',
-                    '{"args":{"lines":"${vw.lines}","usuage":"virtual_wall"},"command":"addwalls"}\n\r\n\r\n');
+                    '{"args":{"lines":"${vw.lines}","usage":"virtual_wall"},"command":"addwalls"}\n\r\n\r\n');
               });
               wallUpdate = true;
               print('Wall Updated');
@@ -117,6 +118,23 @@ class ComHandler {
             case 'getlocalizationquality':
               localizationQuality = currRes.result;
               break;
+            case 'getlines':
+              VirtualWall path = JsonMapper.deserialize<VirtualWall>(element)!;
+              SharedPreferences.getInstance().then((SharedPreferences prefs) {
+                prefs.setString('robotPath',
+                    '{"args":{"lines":"${path.lines}","usage":"virtual_track"},"command":"addlines"}\n\r\n\r\n');
+              });
+              print('lines:${path.lines}');
+              break;
+            case 'gethomepose':
+              RobotPose homepose =
+                  JsonMapper.deserialize<RobotPose>(currRes.result)!;
+              SharedPreferences.getInstance().then((SharedPreferences prefs) {
+                prefs.setString('homePose',
+                    '{"args":{"x":${homepose.x},"y":${homepose.y},"yaw":${homepose.yaw}},"command":"sethomepose"}');
+              });
+              print('getHomepose!');
+              break;
           }
         }
       });
@@ -132,20 +150,31 @@ class ComHandler {
   }
 
   void setRobotMap() async {
+    robotSock.add(utf8.encode(
+        '{"args":{"usage":"virtual_track"},"command":"clearlines"}\n\r\n\r\n'));
     SharedPreferences prefs = await SharedPreferences.getInstance();
     if (prefs.containsKey('robotMap')) {
       String mapSyntax = prefs.getString('robotMap') ?? '';
       if (mapSyntax.length > 0) {
         robotSock.add(utf8.encode(mapSyntax));
         print('Setting map $mapSyntax');
+        mapFileSize = mapSyntax.length;
       }
     }
+    robotSock.add(utf8.encode(prefs.getString('homePose') ?? ""));
     if (prefs.containsKey('robotWall')) {
       String wallSyntax = prefs.getString('robotWall') ?? '';
 
       if (wallSyntax.length > 0) {
         robotSock.add(utf8.encode(wallSyntax));
         print('Setting wall $wallSyntax');
+      }
+    }
+    if (prefs.containsKey('robotPath')) {
+      String pathSyntax = prefs.getString('robotPath') ?? '';
+      if (pathSyntax.isNotEmpty) {
+        robotSock.add(utf8.encode(pathSyntax));
+        print('Setting path $pathSyntax');
       }
     }
   }
@@ -167,6 +196,9 @@ class ComHandler {
   }
 
   Future<String> getMap() async {
+    robotSock.add(utf8.encode(
+        '{"args":{"usage":"virtual_track"},"command":"getlines"}\n\r\n\r\n'));
+    robotSock.add(utf8.encode('{"command":"gethomepose"}\n\r\n\r\n'));
     Completer<String> mapCompleter = new Completer();
     knownArea.check = false;
     mapUpdate = false;
@@ -192,6 +224,7 @@ class ComHandler {
       print('Waiting Wall');
       return !wallUpdate;
     });
+
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String mapString = prefs.getString('robotMap') ?? 'unknown error';
     mapCompleter.complete(mapString);
@@ -199,6 +232,11 @@ class ComHandler {
   }
 
   Future backHome() async {
+    double speed = 0.25;
+    robotSock.add(utf8.encode(
+        '{"args": {"param":"base.max_moving_speed", "value":"$speed"}, "command": "setsystemparameter"}\n\r\n\r\n'));
+    robotSock.add(utf8.encode(
+        '{"args": {"param":"base.max_angular_speed", "value":"${speed * 0.5}"}, "command": "setsystemparameter"}\n\r\n\r\n'));
     Completer c = Completer();
     robotSock
         .add(utf8.encode('{"args":"dock", "command":"backhome"}\n\r\n\r\n'));
@@ -223,9 +261,9 @@ class ComHandler {
     robotSock.add(utf8.encode(
         '{"args": {"param":"base.max_moving_speed", "value":"$speed"}, "command": "setsystemparameter"}\n\r\n\r\n'));
     robotSock.add(utf8.encode(
-        '{"args": {"param":"base.max_angular_speed", "value":"${speed * 1.8}"}, "command": "setsystemparameter"}\n\r\n\r\n'));
+        '{"args": {"param":"base.max_angular_speed", "value":"${speed * 0.7}"}, "command": "setsystemparameter"}\n\r\n\r\n'));
     robotSock.add(utf8.encode(
-        '{"args": {"options": {"flags": ["milestone", "precise"]}, "points": [[$x,$y]], "yaw": 0}, "command": "moveto"}\n\r\n\r\n'));
+        '{"args": {"options": {"flags": ["key_points", "key_points_with_oa"]}, "points": [[$x,$y]], "yaw": 0}, "command": "moveto"}\n\r\n\r\n'));
     isActionDone = false;
 
     await Future.doWhile(() async {

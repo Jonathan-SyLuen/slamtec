@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:taipan_robot/Robot/robotCom.dart';
 import 'package:taipan_robot/data/mission.dart';
 import 'package:taipan_robot/data/missionManager.dart';
@@ -21,6 +22,7 @@ class _DashboardState extends State<Dashboard> {
   RobotPower robotPower = RobotPower(-1, 'Unknown', false);
   RobotPose robotPose = RobotPose(0, 0, 0);
   int taskIndex = -1;
+  FlutterTts flutterTts = FlutterTts();
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -40,7 +42,9 @@ class _DashboardState extends State<Dashboard> {
                           ElevatedButton.styleFrom(minimumSize: Size(200, 100)),
                       icon: Icon(Icons.run_circle),
                       label: Text("Execute Mission"),
-                      onPressed: mm.executeMission,
+                      onPressed: () {
+                        mm.executeMission();
+                      },
                     ),
                   ),
                   Padding(
@@ -65,17 +69,25 @@ class _DashboardState extends State<Dashboard> {
                     child: SizedBox(
                       height: 250,
                       width: 250,
-                      child: ListView.builder(
-                          itemCount: mm.missions.length,
-                          itemBuilder: (context, index) {
-                            return RadioListTile(
-                                title: Text(mm.missions[index].name),
-                                value: index,
-                                groupValue: mm.activeMission,
-                                onChanged: (val) {
-                                  setState(() {
-                                    mm.activeMission = val as int;
-                                  });
+                      child: FutureBuilder<bool>(
+                          future: mm.initCompleted.future,
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return CircularProgressIndicator();
+                            }
+                            return ListView.builder(
+                                itemCount: mm.missions.length,
+                                itemBuilder: (context, index) {
+                                  return RadioListTile(
+                                      title: Text(mm.missions[index].name),
+                                      value: index,
+                                      groupValue: mm.activeMission,
+                                      onChanged: (val) {
+                                        setState(() {
+                                          mm.activeMission = val as int;
+                                        });
+                                      });
                                 });
                           }),
                     ),
@@ -95,11 +107,17 @@ class _DashboardState extends State<Dashboard> {
                       print('Getting Map');
                       String map = await mm.robotCom.getMap();
                       final snackBar = SnackBar(
-                        content: Text(map),
+                        content: Text('Map Size ${map.length.toString()}bytes'),
                       );
                       ScaffoldMessenger.of(context).showSnackBar(snackBar);
                     },
                   ),
+                  TextButton(
+                    child: Text('Load Map'),
+                    onPressed: () async {
+                      mm.robotCom.setRobotMap();
+                    },
+                  )
                 ],
               ),
             ),
@@ -151,18 +169,37 @@ class _DashboardState extends State<Dashboard> {
                                       'Known Area:\n${robotCom.knownArea.width.toStringAsFixed(2)} x ${robotCom.knownArea.height.toStringAsFixed(2)}'),
                                   StatusCard(Icons.high_quality,
                                       'Map Quality:\n${robotCom.localizationQuality}'),
-                                  StatusCard(Icons.task_alt,
+                                  StatusCard(
+                                      robotCom.actionResult == 'Complete'
+                                          ? Icons.done
+                                          : robotCom.actionResult == 'Running'
+                                              ? Icons.run_circle
+                                              : Icons.running_with_errors,
                                       'Task Status:\n${robotCom.actionResult}'),
-                                  StatusCard(
-                                      mm.robotSterilizer.isUvOn
-                                          ? Icons.light_mode
-                                          : Icons.light,
-                                      'UV light\n${mm.robotSterilizer.isUvOn ? 'On' : 'Off'}'),
-                                  StatusCard(
-                                      mm.robotSterilizer.isMistOn
-                                          ? Icons.shower
-                                          : Icons.format_color_fill,
-                                      'Sterilizer\n${mm.robotSterilizer.isMistOn ? 'On' : 'Off'}'),
+                                  GestureDetector(
+                                    onTap: () {
+                                      mm.robotSterilizer
+                                          .setLight(!mm.robotSterilizer.isUvOn);
+                                    },
+                                    child: StatusCard(
+                                        mm.robotSterilizer.isUvOn
+                                            ? Icons.light_mode
+                                            : Icons.light,
+                                        'UV light\n${mm.robotSterilizer.isUvOn ? 'On' : 'Off'}'),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () {
+                                      mm.robotSterilizer.setMist(
+                                          !mm.robotSterilizer.isMistOn);
+                                    },
+                                    child: StatusCard(
+                                        mm.robotSterilizer.isMistOn
+                                            ? Icons.shower
+                                            : Icons.format_color_fill,
+                                        'Sterilizer\n${mm.robotSterilizer.isMistOn ? 'On' : 'Off'}'),
+                                  ),
+                                  StatusCard(Icons.file_download,
+                                      'Map File Size: ${mm.robotCom.mapFileSize}'),
                                 ],
                               ),
                             ),
