@@ -98,6 +98,12 @@ class _DashboardState extends State<Dashboard> {
                         setState(() {});
                       },
                       child: Text('Save Mission')),
+                  ElevatedButton(
+                    child: Text('Load Map'),
+                    onPressed: () async {
+                      mm.robotCom.setRobotMap();
+                    },
+                  ),
                   SizedBox(
                     height: 50,
                   ),
@@ -112,12 +118,6 @@ class _DashboardState extends State<Dashboard> {
                       ScaffoldMessenger.of(context).showSnackBar(snackBar);
                     },
                   ),
-                  TextButton(
-                    child: Text('Load Map'),
-                    onPressed: () async {
-                      mm.robotCom.setRobotMap();
-                    },
-                  )
                 ],
               ),
             ),
@@ -170,7 +170,7 @@ class _DashboardState extends State<Dashboard> {
                                   StatusCard(Icons.high_quality,
                                       'Map Quality:\n${robotCom.localizationQuality}'),
                                   StatusCard(
-                                      robotCom.actionResult == 'complete'
+                                      robotCom.actionResult == 'completed'
                                           ? Icons.done
                                           : robotCom.actionResult == 'running'
                                               ? Icons.run_circle

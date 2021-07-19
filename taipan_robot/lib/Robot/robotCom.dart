@@ -150,8 +150,8 @@ class ComHandler {
   }
 
   void setRobotMap() async {
-    robotSock.add(utf8.encode(
-        '{"args":{"usage":"virtual_track"},"command":"clearlines"}\n\r\n\r\n'));
+    // robotSock.add(utf8.encode(
+    //     '{"args":{"usage":"virtual_track"},"command":"clearlines"}\n\r\n\r\n'));
     SharedPreferences prefs = await SharedPreferences.getInstance();
     if (prefs.containsKey('robotMap')) {
       String mapSyntax = prefs.getString('robotMap') ?? '';
@@ -161,7 +161,9 @@ class ComHandler {
         mapFileSize = mapSyntax.length;
       }
     }
+    await Future.delayed(Duration(seconds: 3));
     robotSock.add(utf8.encode(prefs.getString('homePose') ?? ""));
+    await Future.delayed(Duration(seconds: 3));
     if (prefs.containsKey('robotWall')) {
       String wallSyntax = prefs.getString('robotWall') ?? '';
 
@@ -170,9 +172,10 @@ class ComHandler {
         print('Setting wall $wallSyntax');
       }
     }
+    await Future.delayed(Duration(seconds: 3));
     if (prefs.containsKey('robotPath')) {
       String pathSyntax = prefs.getString('robotPath') ?? '';
-      if (pathSyntax.isNotEmpty) {
+      if (pathSyntax.length > 0) {
         robotSock.add(utf8.encode(pathSyntax));
         print('Setting path $pathSyntax');
       }
@@ -191,7 +194,6 @@ class ComHandler {
           '{"args":{"id":$actionID}, "command":"actionstatus"}\n\r\n\r\n'));
       robotSock
           .add(utf8.encode('{"command":"getlocalizationquality"}\n\r\n\r\n'));
-      // robotSock.add(utf8.encode('{"command":"getrobothealth"}\n\r\n\r\n'));
     });
   }
 

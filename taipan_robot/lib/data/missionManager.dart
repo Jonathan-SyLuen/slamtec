@@ -27,6 +27,7 @@ class MissionManager {
     robotCom.connect();
     robotCom.setRobotMap();
     taskStream.add(-1);
+    robotCom.setRobotMap();
   }
   int get activeMission {
     return _activeMission;
